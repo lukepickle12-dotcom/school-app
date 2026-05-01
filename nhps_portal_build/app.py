@@ -11,6 +11,7 @@ USERS_FILE       = "users.json"
 CLASSES_FILE     = "classes.json"
 WRITEUPS_FILE    = "writeups.json"
 PERMISSIONS_FILE = "permissions.json"
+HALL_PASSES_FILE = "hall_passes.json"
 
 ALLOWED_DOMAIN  = "nhps.net"
 STUDENT_PATTERN = re.compile(r"^\d{6}$")
@@ -69,6 +70,22 @@ ROLE_BADGE_COLORS = {
     "developer":     "dark",
 }
 
+# Destinations for hall passes
+HALL_PASS_DESTINATIONS = [
+    "Bathroom",
+    "Nurse's Office",
+    "Main Office",
+    "Guidance Counselor",
+    "Library / Media Center",
+    "Locker",
+    "Water Fountain",
+    "Other Classroom",
+    "Other",
+]
+
+# Duration options in minutes
+HALL_PASS_DURATIONS = [5, 10, 15, 20, 30, 45, 60]
+
 DEFAULT_PERMISSIONS = {
     "student": {
         "can_join_class":        True,
@@ -81,6 +98,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       False,
         "can_change_roles":      False,
         "can_approve_users":     False,
+        "can_issue_hall_pass":   False,
+        "can_view_all_passes":   False,
+        "can_delete_class":      False,
     },
     "member": {
         "can_join_class":        True,
@@ -93,6 +113,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       False,
         "can_change_roles":      False,
         "can_approve_users":     False,
+        "can_issue_hall_pass":   False,
+        "can_view_all_passes":   False,
+        "can_delete_class":      False,
     },
     "staff": {
         "can_join_class":        True,
@@ -105,6 +128,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       False,
         "can_change_roles":      False,
         "can_approve_users":     False,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      False,
     },
     "teacher": {
         "can_join_class":        True,
@@ -117,6 +143,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       False,
         "can_change_roles":      False,
         "can_approve_users":     False,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      False,
     },
     "administrator": {
         "can_join_class":        True,
@@ -129,6 +158,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       True,
         "can_change_roles":      True,
         "can_approve_users":     True,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      True,
     },
     "principal": {
         "can_join_class":        True,
@@ -141,6 +173,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       True,
         "can_change_roles":      True,
         "can_approve_users":     True,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      True,
     },
     "high_rank": {
         "can_join_class":        True,
@@ -153,6 +188,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       True,
         "can_change_roles":      True,
         "can_approve_users":     True,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      True,
     },
     "developer": {
         "can_join_class":        True,
@@ -165,6 +203,9 @@ DEFAULT_PERMISSIONS = {
         "can_delete_user":       True,
         "can_change_roles":      True,
         "can_approve_users":     True,
+        "can_issue_hall_pass":   True,
+        "can_view_all_passes":   True,
+        "can_delete_class":      True,
     },
 }
 
@@ -179,8 +220,15 @@ PERMISSION_LABELS = {
     "can_delete_user":       "Delete Users from System",
     "can_change_roles":      "Change User Roles",
     "can_approve_users":     "Approve / Reject New Users",
+    "can_issue_hall_pass":   "Issue Hall Passes",
+    "can_view_all_passes":   "View All Hall Passes",
+    "can_delete_class":      "Delete Classes",
 }
 
+
+# ---------------------------------------------------------------------------
+# File helpers
+# ---------------------------------------------------------------------------
 
 def load_users():
     if not os.path.exists(USERS_FILE):
@@ -211,6 +259,16 @@ def load_writeups():
 def save_writeups(w):
     with open(WRITEUPS_FILE, "w") as f:
         json.dump(w, f, indent=2)
+
+def load_hall_passes():
+    if not os.path.exists(HALL_PASSES_FILE):
+        return []
+    with open(HALL_PASSES_FILE) as f:
+        return json.load(f)
+
+def save_hall_passes(p):
+    with open(HALL_PASSES_FILE, "w") as f:
+        json.dump(p, f, indent=2)
 
 def load_permissions():
     if not os.path.exists(PERMISSIONS_FILE):
@@ -283,6 +341,25 @@ def purge_expired_rejections():
     if to_del:
         save_users(users)
 
+def purge_old_expired_passes():
+    """Remove expired passes that have been expired for more than 1 day."""
+    passes = load_hall_passes()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=1)
+    kept = []
+    for p in passes:
+        expires_at = parse_iso(p.get("expires_at", ""))
+        if expires_at and expires_at < cutoff:
+            continue  # drop it — expired more than 1 day ago
+        kept.append(p)
+    if len(kept) != len(passes):
+        save_hall_passes(kept)
+
+def is_pass_active(p):
+    expires_at = parse_iso(p.get("expires_at", ""))
+    if not expires_at:
+        return False
+    return expires_at > datetime.now(timezone.utc)
+
 def validate_nhps_email(email):
     email = email.strip().lower()
     if not email.endswith(f"@{ALLOWED_DOMAIN}"):
@@ -323,6 +400,10 @@ def get_class_by_slug(slug, classes):
     return None, None
 
 
+# ---------------------------------------------------------------------------
+# Decorators
+# ---------------------------------------------------------------------------
+
 def login_required(f):
     @wraps(f)
     def d(*a, **kw):
@@ -358,6 +439,10 @@ def admin_required(f):
     return d
 
 
+# ---------------------------------------------------------------------------
+# Context processor
+# ---------------------------------------------------------------------------
+
 @app.context_processor
 def inject_globals():
     return {
@@ -368,8 +453,13 @@ def inject_globals():
         "role_perm":         role_perm,
         "fmt_date":          fmt_date,
         "session":           session,
+        "is_pass_active":    is_pass_active,
     }
 
+
+# ---------------------------------------------------------------------------
+# Core routes
+# ---------------------------------------------------------------------------
 
 @app.route("/")
 def index():
@@ -501,6 +591,15 @@ def dashboard():
     sorted_writeups = sorted(my_writeups, key=lambda w: w.get("date", ""), reverse=True)
     recent_writeups = sorted_writeups[:3]
 
+    # Active hall pass for this student (if any)
+    my_active_pass = None
+    if user.get("user_type") == "student":
+        passes = load_hall_passes()
+        for p in passes:
+            if p.get("student_email") == session["email"] and is_pass_active(p):
+                my_active_pass = p
+                break
+
     return render_template("dashboard.html",
                            email=session["email"],
                            display_name=session["display_name"],
@@ -510,7 +609,8 @@ def dashboard():
                            role_badge=ROLE_BADGE_COLORS.get(role, "secondary"),
                            user=user,
                            writeup_count=writeup_count,
-                           recent_writeups=recent_writeups)
+                           recent_writeups=recent_writeups,
+                           my_active_pass=my_active_pass)
 
 
 @app.route("/logout")
@@ -548,6 +648,10 @@ def dev_login():
     flash("Logged in as Developer.", "success")
     return redirect(url_for("dashboard"))
 
+
+# ---------------------------------------------------------------------------
+# Admin
+# ---------------------------------------------------------------------------
 
 @app.route("/admin")
 @admin_required
@@ -703,6 +807,11 @@ def delete_user(email):
     if email in writeups:
         del writeups[email]; save_writeups(writeups)
 
+    # Remove any hall passes for this user
+    passes = load_hall_passes()
+    passes = [p for p in passes if p.get("student_email") != email]
+    save_hall_passes(passes)
+
     flash(f'"{display}" has been permanently removed from the system.', "success")
     return redirect(url_for("admin"))
 
@@ -784,6 +893,10 @@ def reset_permissions():
     flash("Permissions reset to defaults.", "info")
     return redirect(url_for("permissions_editor"))
 
+
+# ---------------------------------------------------------------------------
+# Write-ups
+# ---------------------------------------------------------------------------
 
 @app.route("/writeups/<path:student_email>")
 @login_required
@@ -874,6 +987,190 @@ def delete_writeup(student_email, writeup_id):
     return redirect(url_for("view_writeups", student_email=student_email))
 
 
+# ---------------------------------------------------------------------------
+# Hall Passes
+# ---------------------------------------------------------------------------
+
+@app.route("/hall-passes")
+@login_required
+@approved_required
+def hall_passes():
+    purge_old_expired_passes()
+    passes     = load_hall_passes()
+    users      = load_users()
+    can_view   = role_perm("can_view_all_passes")
+    can_issue  = role_perm("can_issue_hall_pass")
+    email      = session["email"]
+
+    now = datetime.now(timezone.utc)
+
+    if can_view:
+        # Staff/teachers/admins see all passes
+        active_passes  = [p for p in passes if is_pass_active(p)]
+        expired_passes = [p for p in passes if not is_pass_active(p)]
+    else:
+        # Students only see their own passes
+        active_passes  = [p for p in passes if p.get("student_email") == email and is_pass_active(p)]
+        expired_passes = [p for p in passes if p.get("student_email") == email and not is_pass_active(p)]
+
+    # Sort
+    active_passes  = sorted(active_passes,  key=lambda p: p.get("expires_at", ""))
+    expired_passes = sorted(expired_passes, key=lambda p: p.get("expires_at", ""), reverse=True)
+
+    # Enrich with user display names
+    def enrich_pass(p):
+        student = users.get(p.get("student_email", ""), {})
+        return {
+            **p,
+            "student_name":  student.get("display_name", p.get("student_email", "Unknown")),
+            "expires_dt":    parse_iso(p.get("expires_at", "")),
+            "issued_dt":     parse_iso(p.get("issued_at", "")),
+        }
+
+    active_passes  = [enrich_pass(p) for p in active_passes]
+    expired_passes = [enrich_pass(p) for p in expired_passes]
+
+    # Students eligible to be issued a pass (approved students)
+    student_list = []
+    if can_issue:
+        for em, u in users.items():
+            if u.get("status") == "approved" and u.get("user_type") == "student":
+                student_list.append({"email": em, "display_name": u.get("display_name", em)})
+        student_list.sort(key=lambda s: s["display_name"])
+
+    return render_template("hall_passes.html",
+                           active_passes=active_passes,
+                           expired_passes=expired_passes,
+                           can_issue=can_issue,
+                           can_view=can_view,
+                           student_list=student_list,
+                           destinations=HALL_PASS_DESTINATIONS,
+                           durations=HALL_PASS_DURATIONS,
+                           now=now)
+
+
+@app.route("/hall-passes/issue", methods=["POST"])
+@login_required
+@approved_required
+def issue_hall_pass():
+    if not role_perm("can_issue_hall_pass"):
+        flash("You don't have permission to issue hall passes.", "error")
+        return redirect(url_for("hall_passes"))
+
+    student_email = request.form.get("student_email", "").strip().lower()
+    destination   = request.form.get("destination", "").strip()
+    duration_str  = request.form.get("duration", "").strip()
+    notes         = request.form.get("notes", "").strip()
+    custom_dest   = request.form.get("custom_destination", "").strip()
+
+    # Resolve destination
+    if destination == "Other" and custom_dest:
+        destination = custom_dest
+    elif destination not in HALL_PASS_DESTINATIONS:
+        flash("Please select a valid destination.", "error")
+        return redirect(url_for("hall_passes"))
+
+    try:
+        duration_min = int(duration_str)
+        if duration_min not in HALL_PASS_DURATIONS:
+            raise ValueError
+    except ValueError:
+        flash("Please select a valid duration.", "error")
+        return redirect(url_for("hall_passes"))
+
+    users = load_users()
+    if student_email not in users:
+        flash("Student not found.", "error")
+        return redirect(url_for("hall_passes"))
+
+    student = users[student_email]
+    if student.get("user_type") != "student":
+        flash("Hall passes can only be issued to students.", "error")
+        return redirect(url_for("hall_passes"))
+
+    now        = datetime.now(timezone.utc)
+    expires_at = now + timedelta(minutes=duration_min)
+
+    pass_record = {
+        "id":            str(uuid.uuid4()),
+        "student_email": student_email,
+        "destination":   destination,
+        "duration_min":  duration_min,
+        "notes":         notes,
+        "issued_at":     now.isoformat(),
+        "expires_at":    expires_at.isoformat(),
+        "issued_by":     session["email"],
+        "issuer_name":   session["display_name"],
+    }
+
+    passes = load_hall_passes()
+    passes.append(pass_record)
+    save_hall_passes(passes)
+
+    flash(f"Hall pass issued to {student['display_name']} for {duration_min} minutes — destination: {destination}.", "success")
+    return redirect(url_for("hall_passes"))
+
+
+@app.route("/hall-passes/<pass_id>/revoke", methods=["POST"])
+@login_required
+@approved_required
+def revoke_hall_pass(pass_id):
+    if not role_perm("can_issue_hall_pass"):
+        flash("You don't have permission to revoke hall passes.", "error")
+        return redirect(url_for("hall_passes"))
+
+    passes = load_hall_passes()
+    found  = False
+    for p in passes:
+        if p["id"] == pass_id:
+            # Set expiry to now (immediately expire)
+            p["expires_at"] = datetime.now(timezone.utc).isoformat()
+            p["revoked"]    = True
+            p["revoked_by"] = session["display_name"]
+            found = True
+            break
+
+    if found:
+        save_hall_passes(passes)
+        flash("Hall pass revoked.", "info")
+    else:
+        flash("Pass not found.", "error")
+
+    return redirect(url_for("hall_passes"))
+
+
+@app.route("/hall-passes/student/<path:student_email>")
+@login_required
+@approved_required
+def student_passes(student_email):
+    """View all passes (active + history) for a specific student."""
+    if not role_perm("can_view_all_passes") and session["email"] != student_email:
+        flash("Access denied.", "error")
+        return redirect(url_for("dashboard"))
+
+    purge_old_expired_passes()
+    passes  = load_hall_passes()
+    users   = load_users()
+    student = users.get(student_email)
+
+    if not student:
+        flash("Student not found.", "error")
+        return redirect(url_for("hall_passes"))
+
+    student_passes_list = [p for p in passes if p.get("student_email") == student_email]
+    student_passes_list = sorted(student_passes_list, key=lambda p: p.get("issued_at", ""), reverse=True)
+
+    return render_template("student_passes.html",
+                           student=student,
+                           student_email=student_email,
+                           passes=student_passes_list,
+                           is_pass_active=is_pass_active)
+
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
+
 @app.route("/classes")
 @login_required
 @approved_required
@@ -889,13 +1186,21 @@ def classrooms():
         my = [{**c, "id": cid, "member_count": len(c.get("members", []))}
               for cid, c in classes.items() if email in c.get("members", [])]
 
+    # Admins can see all classes
+    all_classes_list = None
+    if role_perm("can_delete_class"):
+        all_classes_list = [{**c, "id": cid, "member_count": len(c.get("members", []))}
+                            for cid, c in classes.items()]
+
     return render_template("classrooms.html",
                            teaching=my,
+                           all_classes=all_classes_list,
                            user_type=session["user_type"],
                            role=role,
                            display_name=session["display_name"],
                            can_create=role_perm("can_create_class"),
-                           can_join=role_perm("can_join_class"))
+                           can_join=role_perm("can_join_class"),
+                           can_delete_class=role_perm("can_delete_class"))
 
 
 @app.route("/classes/create", methods=["POST"])
@@ -933,6 +1238,26 @@ def create_class():
     save_classes(classes)
     flash(f'Class "{name}" created! Code: {code}', "success")
     return redirect(url_for("view_classroom", slug=slug))
+
+
+@app.route("/classes/<class_id>/delete", methods=["POST"])
+@login_required
+@approved_required
+def delete_class(class_id):
+    if not role_perm("can_delete_class"):
+        flash("You don't have permission to delete classes.", "error")
+        return redirect(url_for("classrooms"))
+
+    classes = load_classes()
+    if class_id not in classes:
+        flash("Class not found.", "error")
+        return redirect(url_for("classrooms"))
+
+    class_name = classes[class_id].get("name", "Unknown")
+    del classes[class_id]
+    save_classes(classes)
+    flash(f'Class "{class_name}" has been permanently deleted.', "success")
+    return redirect(url_for("classrooms"))
 
 
 @app.route("/c/<slug>")
@@ -975,7 +1300,8 @@ def view_classroom(slug):
                            is_teacher=is_teacher,
                            can_remove=role_perm("can_remove_student"),
                            can_issue_writeup=role_perm("can_issue_writeup"),
-                           can_view_writeups=role_perm("can_view_all_writeups"))
+                           can_view_writeups=role_perm("can_view_all_writeups"),
+                           can_delete_class=role_perm("can_delete_class"))
 
 
 @app.route("/classes/join", methods=["POST"])
