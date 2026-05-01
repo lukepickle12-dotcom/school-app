@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}Hall Passes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="mb-0 fw-bold">🪪 Hall Passes</h2>
+      <p class="text-muted mb-0 small">
+        {% if can_view %}All active and recent passes{% else %}Your hall pass history{% endif %}
+      </p>
+    </div>
+    {% if can_issue %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issuePassModal">
+      <i class="bi bi-plus-lg me-1"></i> Issue Pass
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- ── Active Passes ─────────────────────────────────────── -->
+  <h5 class="fw-semibold mb-3 text-success">
+    <i class="bi bi-check-circle-fill me-1"></i> Active Passes
+    <span class="badge bg-success ms-1">{{ active_passes|length }}</span>
+  </h5>
+
+  {% if active_passes %}
+  <div class="row g-3 mb-5">
+    {% for p in active_passes %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card border-success shadow-sm h-100 pass-card" data-expires="{{ p.expires_at }}">
+        <!-- Pass header -->
+        <div class="card-header bg-success bg-opacity-10 border-success d-flex justify-content-between align-items-center py-2">
+          <span class="badge bg-success fs-6 px-3 py-2">
+            <i class="bi bi-door-open me-1"></i>ACTIVE
+          </span>
+          {% if can_issue %}
+          <form method="post" action="{{ url_for('revoke_hall_pass', pass_id=p.id) }}"
+                onsubmit="return confirm('Revoke this hall pass?')">
+            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+              <i class="bi bi-x-circle"></i> Revoke
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+        <div class="card-body">
+          <!-- Student name -->
+          {% if can_view %}
+          <h6 class="fw-bold mb-1">
+            <i class="bi bi-person-fill me-1 text-muted"></i>
+            {{ p.student_name }}
+          </h6>
+          {% endif %}
+
+          <!-- Destination -->
+          <div class="mb-2">
+            <span class="text-muted small">Destination:</span>
+            <span class="fw-semibold ms-1">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ p.destination }}
+            </span>
+          </div>
+
+          <!-- Notes -->
+          {% if p.notes %}
+          <div class="mb-2">
+            <span class="text-muted small">Notes:</span>
+            <span class="ms-1 fst-italic">{{ p.notes }}</span>
+          </div>
+          {% endif %}
+
+          <!-- Issued by / at -->
+          <div class="small text-muted mb-2">
+            Issued by <strong>{{ p.issuer_name }}</strong>
+            at {{ p.issued_at | string | truncate(19, killwords=True, end='') | replace('T',' ') }} UTC
+          </div>
+
+          <!-- Countdown -->
+          <div class="mt-3 p-2 rounded bg-success bg-opacity-10 text-center">
+            <div class="small text-muted mb-1">Expires in</div>
+            <div class="countdown-display fw-bold fs-5 text-success font-monospace"
+                 data-expires="{{ p.expires_at }}">
+              --:--
+            </div>
+            <div class="progress mt-2" style="height:6px;">
+              <div class="progress-bar bg-success countdown-bar"
+                   data-issued="{{ p.issued_at }}"
+                   data-expires="{{ p.expires_at }}"
+                   style="width:100%"></div>
+            </div>
+            <div class="small text-muted mt-1">
+              Duration: {{ p.duration_min }} min
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer text-muted small py-2">
+          Pass ID: <code>{{ p.id[:8] }}…</code>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="alert alert-success border-0 bg-success bg-opacity-10 mb-5">
+    <i class="bi bi-check2-circle me-2"></i>No active hall passes right now.
+  </div>
+  {% endif %}
+
+
+  <!-- ── Expired / History Passes ──────────────────────────── -->
+  <h5 class="fw-semibold mb-3 text-secondary">
+    <i class="bi bi-clock-history me-1"></i> Expired / History
+    <span class="badge bg-secondary ms-1">{{ expired_passes|length }}</span>
+  </h5>
+
+  {% if expired_passes %}
+  <div class="table-responsive mb-4">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          {% if can_view %}<th>Student</th>{% endif %}
+          <th>Destination</th>
+          <th>Duration</th>
+          <th>Issued By</th>
+          <th>Issued At</th>
+          <th>Expired At</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in expired_passes %}
+        <tr class="text-muted">
+          {% if can_view %}<td><strong>{{ p.student_name }}</strong></td>{% endif %}
+          <td><i class="bi bi-geo-alt me-1"></i>{{ p.destination }}</td>
+          <td>{{ p.duration_min }} min</td>
+          <td>{{ p.issuer_name }}</td>
+          <td class="font-monospace small">
+            {{ p.issued_at | string | truncate(19, killwords=True, end='') | replace('T',' ') }}
+          </td>
+          <td class="font-monospace small">
+            {{ p.expires_at | string | truncate(19, killwords=True, end='') | replace('T',' ') }}
+          </td>
+          <td>
+            {% if p.get('revoked') %}
+            <span class="badge bg-danger">Revoked</span>
+            {% else %}
+            <span class="badge bg-secondary">Expired</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-secondary border-0 bg-secondary bg-opacity-10">
+    <i class="bi bi-clock me-2"></i>No expired passes to show yet.
+  </div>
+  {% endif %}
+
+</div>
+
+
+<!-- ── Issue Pass Modal ────────────────────────────────────── -->
+{% if can_issue %}
+<div class="modal fade" id="issuePassModal" tabindex="-1" aria-labelledby="issuePassLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="issuePassLabel">
+          <i class="bi bi-pass me-2"></i>Issue Hall Pass
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{{ url_for('issue_hall_pass') }}">
+        <div class="modal-body">
+
+          <!-- Student -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Student <span class="text-danger">*</span></label>
+            <select name="student_email" class="form-select" required>
+              <option value="" disabled selected>— Select a student —</option>
+              {% for s in student_list %}
+              <option value="{{ s.email }}">{{ s.display_name }} ({{ s.email }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Destination -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Destination <span class="text-danger">*</span></label>
+            <select name="destination" class="form-select" id="destinationSelect" required>
+              <option value="" disabled selected>— Select destination —</option>
+              {% for dest in destinations %}
+              <option value="{{ dest }}">{{ dest }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Custom destination (shown only when Other is selected) -->
+          <div class="mb-3 d-none" id="customDestDiv">
+            <label class="form-label fw-semibold">Specify Destination <span class="text-danger">*</span></label>
+            <input type="text" name="custom_destination" class="form-control"
+                   placeholder="e.g. Room 204" id="customDestInput">
+          </div>
+
+          <!-- Duration -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Duration <span class="text-danger">*</span></label>
+            <select name="duration" class="form-select" required>
+              <option value="" disabled selected>— Select duration —</option>
+              {% for d in durations %}
+              <option value="{{ d }}">{{ d }} minutes</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea name="notes" class="form-control" rows="2"
+                      placeholder="Any additional context…"></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send me-1"></i> Issue Pass
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<script>
+// Show/hide custom destination field
+document.getElementById('destinationSelect')?.addEventListener('change', function() {
+  const div   = document.getElementById('customDestDiv');
+  const input = document.getElementById('customDestInput');
+  if (this.value === 'Other') {
+    div.classList.remove('d-none');
+    input.required = true;
+  } else {
+    div.classList.add('d-none');
+    input.required = false;
+  }
+});
+
+// Countdown timers
+function updateCountdowns() {
+  const now = Date.now();
+
+  // Countdown displays
+  document.querySelectorAll('.countdown-display').forEach(el => {
+    const expires = new Date(el.dataset.expires).getTime();
+    const diff    = Math.max(0, expires - now);
+    const min     = Math.floor(diff / 60000);
+    const sec     = Math.floor((diff % 60000) / 1000);
+    el.textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    if (diff === 0) {
+      el.classList.replace('text-success', 'text-danger');
+      el.closest('.pass-card')?.classList.replace('border-success', 'border-danger');
+    }
+  });
+
+  // Progress bars
+  document.querySelectorAll('.countdown-bar').forEach(bar => {
+    const issued  = new Date(bar.dataset.issued).getTime();
+    const expires = new Date(bar.dataset.expires).getTime();
+    const total   = expires - issued;
+    const elapsed = now - issued;
+    const pct     = Math.max(0, Math.min(100, 100 - (elapsed / total * 100)));
+    bar.style.width = pct + '%';
+    if (pct < 25) {
+      bar.classList.replace('bg-success', 'bg-danger');
+    } else if (pct < 50) {
+      bar.classList.replace('bg-success', 'bg-warning');
+    }
+  });
+}
+
+updateCountdowns();
+setInterval(updateCountdowns, 1000);
+</script>
+{% endblock %}

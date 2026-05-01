@@ -1,0 +1,61 @@
+{# ── Add this inside classroom.html where the teacher actions are ── #}
+
+{# Inside the class info / action area (visible to teacher or admin): #}
+{% if can_delete_class %}
+<form method="post" action="{{ url_for('delete_class', class_id=classroom.id) }}"
+      onsubmit="return confirm('Permanently delete class "{{ classroom.name }}"? This cannot be undone.');"
+      class="d-inline">
+  <button type="submit" class="btn btn-sm btn-outline-danger">
+    <i class="bi bi-trash3 me-1"></i>Delete Class
+  </button>
+</form>
+{% endif %}
+
+
+{# ── In classrooms.html — add an "All Classes" admin section ── #}
+
+{% if can_delete_class and all_classes %}
+<hr class="my-4">
+<h5 class="fw-semibold mb-3">
+  <i class="bi bi-shield-lock me-1 text-warning"></i>All Classes (Admin View)
+</h5>
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Class Name</th>
+        <th>Subject</th>
+        <th>Teacher</th>
+        <th>Period</th>
+        <th>Members</th>
+        <th>Code</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in all_classes %}
+      <tr>
+        <td>
+          <a href="{{ url_for('view_classroom', slug=c.url_slug) }}" class="fw-semibold text-decoration-none">
+            {{ c.name }}
+          </a>
+        </td>
+        <td>{{ c.subject }}</td>
+        <td>{{ c.teacher_name }}</td>
+        <td>{{ c.period }}</td>
+        <td><span class="badge bg-secondary">{{ c.member_count }}</span></td>
+        <td><code>{{ c.code }}</code></td>
+        <td>
+          <form method="post" action="{{ url_for('delete_class', class_id=c.id) }}"
+                onsubmit="return confirm('Permanently delete class &quot;{{ c.name }}&quot;?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Passes for {{ student.display_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="mb-4">
+    <a href="{{ url_for('hall_passes') }}" class="btn btn-sm btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left me-1"></i> Back to Hall Passes
+    </a>
+    <h2 class="fw-bold mb-0">
+      <i class="bi bi-person-badge me-2 text-primary"></i>
+      Hall Pass History — {{ student.display_name }}
+    </h2>
+    <p class="text-muted small">{{ student_email }}</p>
+  </div>
+
+  {% if passes %}
+  <div class="row g-3">
+    {% for p in passes %}
+    {% set active = is_pass_active(p) %}
+    <div class="col-md-6">
+      <div class="card h-100 border-{{ 'success' if active else 'secondary' }} shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center py-2
+                    bg-{{ 'success' if active else 'secondary' }} bg-opacity-10
+                    border-{{ 'success' if active else 'secondary' }}">
+          <span class="fw-semibold">
+            <i class="bi bi-geo-alt-fill me-1 text-danger"></i>{{ p.destination }}
+          </span>
+          {% if active %}
+          <span class="badge bg-success">Active</span>
+          {% elif p.get('revoked') %}
+          <span class="badge bg-danger">Revoked</span>
+          {% else %}
+          <span class="badge bg-secondary">Expired</span>
+          {% endif %}
+        </div>
+        <div class="card-body small">
+          <div class="row g-2">
+            <div class="col-6">
+              <span class="text-muted">Duration:</span>
+              <span class="fw-semibold ms-1">{{ p.duration_min }} min</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted">Issued by:</span>
+              <span class="ms-1">{{ p.issuer_name }}</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted">Issued at:</span>
+              <span class="font-monospace ms-1">
+                {{ p.issued_at[:19] | replace('T',' ') }}
+              </span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted">Expired at:</span>
+              <span class="font-monospace ms-1">
+                {{ p.expires_at[:19] | replace('T',' ') }}
+              </span>
+            </div>
+            {% if p.notes %}
+            <div class="col-12">
+              <span class="text-muted">Notes:</span>
+              <span class="fst-italic ms-1">{{ p.notes }}</span>
+            </div>
+            {% endif %}
+            {% if p.get('revoked_by') %}
+            <div class="col-12 text-danger">
+              <i class="bi bi-x-circle me-1"></i>Revoked by {{ p.revoked_by }}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if active %}
+          <div class="mt-3 p-2 rounded bg-success bg-opacity-10 text-center">
+            <div class="small text-muted mb-1">Time remaining</div>
+            <div class="countdown-display fw-bold fs-5 text-success font-monospace"
+                 data-expires="{{ p.expires_at }}">--:--</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="alert alert-secondary border-0 bg-secondary bg-opacity-10">
+    <i class="bi bi-clock me-2"></i>No hall passes found for this student.
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function updateCountdowns() {
+  const now = Date.now();
+  document.querySelectorAll('.countdown-display').forEach(el => {
+    const expires = new Date(el.dataset.expires).getTime();
+    const diff    = Math.max(0, expires - now);
+    const min     = Math.floor(diff / 60000);
+    const sec     = Math.floor((diff % 60000) / 1000);
+    el.textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    if (diff === 0) el.classList.replace('text-success', 'text-danger');
+  });
+}
+updateCountdowns();
+setInterval(updateCountdowns, 1000);
+</script>
+{% endblock %}
