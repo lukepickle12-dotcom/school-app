@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Register — NHPS Portal{% endblock %}
+{% block title %}Register — Tester Portal{% endblock %}
 
 {% block extra_css %}
 .auth-page {
@@ -67,24 +67,24 @@
 {% block content %}
 <div class="auth-page">
   <div class="auth-brand">
-    <div class="brand-badge">NHPS Portal</div>
+    <div class="brand-badge">Tester Portal</div>
     <h1>Create your<br><span>account</span></h1>
-    <p>Register with your school-issued nhps.net email address.</p>
+    <p>Register with your school-issued Tester.net email address.</p>
     <div class="hint-box">
-      <p><strong>Students:</strong> Use your 6-digit ID<br>e.g. <strong>123456@nhps.net</strong></p>
-      <p style="margin-top:.5rem"><strong>Staff:</strong> Use firstname.lastname<br>e.g. <strong>jane.doe@nhps.net</strong></p>
+      <p><strong>Students:</strong> Use your 6-digit ID<br>e.g. <strong>123456@Tester.net</strong></p>
+      <p style="margin-top:.5rem"><strong>Staff:</strong> Use firstname.lastname<br>e.g. <strong>jane.doe@Tester.net</strong></p>
     </div>
   </div>
 
   <div class="auth-form-side">
     <div class="auth-card">
       <h2>Create account</h2>
-      <p class="sub">Only @nhps.net addresses are accepted</p>
+      <p class="sub">Only @Tester.net addresses are accepted</p>
 
       <form method="POST" id="regForm">
         <div class="form-group">
           <label>School Email</label>
-          <input type="email" name="email" id="emailInput" value="{{ email }}" placeholder="123456@nhps.net or jane.doe@nhps.net" required autofocus />
+          <input type="email" name="email" id="emailInput" value="{{ email }}" placeholder="123456@Tester.net or jane.doe@Tester.net" required autofocus />
         </div>
 
         <div class="form-group">
