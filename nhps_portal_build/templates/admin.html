@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin — NHPS Portal{% endblock %}
+{% block title %}Admin — Tester Portal{% endblock %}
 
 {% block extra_css %}
 .dashboard { min-height: 100vh; display: flex; flex-direction: column; }
@@ -202,7 +202,7 @@
 {% block content %}
 <div class="dashboard">
   <nav class="navbar">
-    <div class="nav-logo">NHPS <span>Admin</span></div>
+    <div class="nav-logo">Tester <span>Admin</span></div>
     <div class="nav-right">
       {% if role_perm('can_access_admin') and session.get('role') == 'developer' %}
       <a href="{{ url_for('permissions_editor') }}" class="perm-link">⚙ Permissions</a>
