@@ -13,7 +13,7 @@ WRITEUPS_FILE    = "writeups.json"
 PERMISSIONS_FILE = "permissions.json"
 HALL_PASSES_FILE = "hall_passes.json"
 
-ALLOWED_DOMAIN  = "nhps.net"
+ALLOWED_DOMAIN  = "testers.it"
 STUDENT_PATTERN = re.compile(r"^\d{6}$")
 STAFF_PATTERN   = re.compile(r"^[a-zA-Z]+\.[a-zA-Z]+$")
 
