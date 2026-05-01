@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% block title %}Admin — NHPS Portal{% endblock %}
+
+{% block extra_css %}
+.dashboard { min-height: 100vh; display: flex; flex-direction: column; }
+.navbar {
+  background: var(--navy);
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--white); letter-spacing: .05em; }
+.nav-logo span { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.btn-logout { background: transparent; border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.7); padding: .35rem .9rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .85rem; cursor: pointer; text-decoration: none; transition: all .2s; }
+.btn-logout:hover { background: rgba(255,255,255,.08); color: var(--white); }
+.btn-dash { background: rgba(232,160,32,.15); border: 1px solid rgba(232,160,32,.3); color: var(--accent); padding: .35rem .9rem; border-radius: 6px; font-size: .85rem; text-decoration: none; transition: all .2s; }
+.btn-dash:hover { background: rgba(232,160,32,.25); }
+
+.main { flex: 1; padding: 2.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+.page-title { font-size: 2rem; color: var(--navy); margin-bottom: .3rem; }
+.page-sub { color: var(--muted); margin-bottom: 2rem; font-size: .95rem; }
+
+/* ── User Lookup ── */
+.lookup-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+}
+.lookup-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  color: var(--navy);
+  margin-bottom: 1rem;
+}
+.lookup-row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.lookup-input {
+  flex: 1; min-width: 240px;
+  padding: .55rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+  color: var(--text);
+  background: var(--light);
+  transition: border-color .2s;
+}
+.lookup-input:focus { outline: none; border-color: var(--blue); }
+.btn-lookup {
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  padding: .55rem 1.4rem;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-lookup:hover { opacity: .85; }
+
+/* Profile card result */
+#lookup-result { margin-top: 1.25rem; }
+.profile-card {
+  background: var(--light);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.profile-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.profile-info h3 { font-size: 1.1rem; color: var(--navy); margin-bottom: .25rem; }
+.profile-info .profile-email { font-size: .83rem; color: var(--muted); margin-bottom: .5rem; }
+.profile-meta { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+.meta-tag {
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.meta-tag.student { background: rgba(232,160,32,.15); color: #b87a10; }
+.meta-tag.staff   { background: rgba(26,58,107,.1); color: var(--blue); }
+.meta-tag.role    { background: rgba(26,122,74,.12); color: var(--green); }
+.meta-tag.writeups { background: rgba(192,57,43,.1); color: var(--red); }
+
+.profile-section-title {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  margin-bottom: .5rem;
+}
+.class-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .35rem; }
+.class-list li {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .45rem .85rem;
+  font-size: .85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+}
+.class-list .class-role {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+  background: rgba(26,58,107,.1);
+  color: var(--blue);
+}
+.class-list .class-role.teacher { background: rgba(26,122,74,.12); color: var(--green); }
+.no-classes { font-size: .85rem; color: var(--muted); font-style: italic; }
+.lookup-error { padding: .75rem 1rem; background: rgba(192,57,43,.08); border: 1px solid rgba(192,57,43,.2); border-radius: 8px; color: var(--red); font-size: .9rem; }
+.lookup-loading { color: var(--muted); font-size: .9rem; font-style: italic; }
+
+/* ── Sections ── */
+.section { margin-bottom: 2.5rem; }
+.section-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+.count-badge { padding: .2rem .65rem; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+.badge-pending  { background: rgba(232,160,32,.15); color: #b87a10; }
+.badge-approved { background: rgba(26,122,74,.12);  color: var(--green); }
+.badge-rejected { background: rgba(192,57,43,.1);   color: var(--red); }
+
+.group-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  padding: .4rem 1rem;
+  background: var(--light);
+  border-top: 1px solid var(--border);
+}
+.group-label:first-child { border-top: none; }
+
+.user-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.user-table th { padding: .75rem 1rem; background: var(--light); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; text-align: left; }
+.user-table td { padding: .85rem 1rem; border-top: 1px solid var(--border); font-size: .9rem; vertical-align: middle; }
+.user-table tr:hover td { background: #f8fafd; }
+.type-badge { padding: .2rem .6rem; border-radius: 12px; font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+.type-badge.student { background: rgba(232,160,32,.15); color: #b87a10; }
+.type-badge.staff   { background: rgba(26,58,107,.1);   color: var(--blue); }
+
+/* Role badge variants */
+.role-badge { display: inline-block; padding: .18rem .6rem; border-radius: 12px; font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.role-badge.secondary { background: #f0f0f0; color: #555; }
+.role-badge.info      { background: rgba(13,202,240,.15); color: #087990; }
+.role-badge.primary   { background: rgba(26,58,107,.12); color: var(--blue); }
+.role-badge.success   { background: rgba(26,122,74,.12); color: var(--green); }
+.role-badge.warning   { background: rgba(232,160,32,.18); color: #b87a10; }
+.role-badge.orange    { background: rgba(220,120,0,.15); color: #a05000; }
+.role-badge.danger    { background: rgba(192,57,43,.12); color: var(--red); }
+.role-badge.dark      { background: rgba(30,30,30,.12); color: #111; }
+
+.action-form { display: inline; }
+.btn-approve { background: var(--green); color: #fff; border: none; padding: .35rem .8rem; border-radius: 6px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+.btn-approve:hover { opacity: .85; }
+.btn-reject  { background: var(--red); color: #fff; border: none; padding: .35rem .8rem; border-radius: 6px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: opacity .2s; margin-left: .4rem; }
+.btn-reject:hover { opacity: .85; }
+.btn-delete  { background: #444; color: #fff; border: none; padding: .35rem .8rem; border-radius: 6px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: opacity .2s; margin-left: .4rem; }
+.btn-delete:hover { background: #222; }
+
+.role-form { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.role-select { padding: .3rem .6rem; border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .85rem; color: var(--text); background: var(--light); cursor: pointer; }
+.btn-set-role { background: var(--blue); color: #fff; border: none; padding: .3rem .7rem; border-radius: 6px; font-size: .82rem; cursor: pointer; transition: opacity .2s; }
+.btn-set-role:hover { opacity: .85; }
+
+.empty-row td { text-align: center; color: var(--muted); padding: 1.5rem; font-style: italic; }
+
+.perm-link { font-size: .82rem; color: var(--blue); text-decoration: none; }
+.perm-link:hover { text-decoration: underline; }
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <nav class="navbar">
+    <div class="nav-logo">NHPS <span>Admin</span></div>
+    <div class="nav-right">
+      {% if role_perm('can_access_admin') and session.get('role') == 'developer' %}
+      <a href="{{ url_for('permissions_editor') }}" class="perm-link">⚙ Permissions</a>
+      {% endif %}
+      <a href="{{ url_for('dashboard') }}" class="btn-dash">← Dashboard</a>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Sign out</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-title">Admin Panel</h1>
+    <p class="page-sub">Manage user registrations, roles, and look up user profiles.</p>
+
+    <!-- ── User Lookup ── -->
+    <div class="lookup-card">
+      <h2>🔍 User Lookup</h2>
+      <div class="lookup-row">
+        <input
+          type="text"
+          id="lookup-input"
+          class="lookup-input"
+          placeholder="Search by name or email (e.g. john.doe or 123456)…"
+          autocomplete="off"
+        />
+        <button class="btn-lookup" onclick="lookupUser()">Look Up</button>
+      </div>
+      <div id="lookup-result"></div>
+    </div>
+
+    <!-- ── Pending Approvals ── -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Pending Approvals</span>
+        <span class="count-badge badge-pending">{{ pending|length }}</span>
+      </div>
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Type</th><th>Details</th>
+            {% if role_perm('can_approve_users') %}<th>Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for email, u in pending.items() %}
+          <tr>
+            <td><strong>{{ u.display_name }}</strong></td>
+            <td>{{ email }}</td>
+            <td><span class="type-badge {{ u.user_type }}">{{ u.user_type }}</span></td>
+            <td style="font-size:.82rem; color:var(--muted);">
+              {% if u.user_type == 'student' %}Grade {{ u.grade }}{% else %}{{ u.get('title','') }} — {{ u.get('department','') }}{% endif %}
+            </td>
+            {% if role_perm('can_approve_users') %}
+            <td>
+              {% if email != current_email %}
+              <form action="{{ url_for('approve_user', email=email) }}" method="POST" class="action-form">
+                <button class="btn-approve">✓ Approve</button>
+              </form>
+              <form action="{{ url_for('reject_user', email=email) }}" method="POST" class="action-form">
+                <button class="btn-reject">✗ Reject</button>
+              </form>
+              {% else %}
+              <em style="color:var(--muted);font-size:.85rem;">You</em>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="5">No pending registrations</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Approved Users (grouped) ── -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Approved Users</span>
+        <span class="count-badge badge-approved">{{ approved|length }}</span>
+      </div>
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Type</th><th>Role</th>
+            {% if role_perm('can_change_roles') %}<th>Change Role</th>{% endif %}
+            {% if role_perm('can_delete_user') %}<th>Delete</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% set ns = namespace(any_approved=false) %}
+          {% for group in group_order %}
+            {% set group_users = grouped_approved[group] %}
+            {% if group_users %}
+              {% set ns.any_approved = true %}
+              <tr>
+                <td colspan="6" class="group-label">{{ group }}</td>
+              </tr>
+              {% for email, u in group_users.items() %}
+              <tr>
+                <td>
+                  <strong style="cursor:pointer;color:var(--blue);" onclick="lookupByEmail('{{ email }}')">{{ u.display_name }}</strong>
+                </td>
+                <td style="font-size:.83rem;">{{ email }}</td>
+                <td><span class="type-badge {{ u.user_type }}">{{ u.user_type }}</span></td>
+                <td>
+                  <span class="role-badge {{ u.role_badge }}">{{ u.role_label }}</span>
+                </td>
+                {% if role_perm('can_change_roles') %}
+                <td>
+                  {% if email != current_email and u.can_modify %}
+                  <form action="{{ url_for('set_role', email=email) }}" method="POST" class="role-form">
+                    <select name="role" class="role-select">
+                      {% for r in assignable_roles %}
+                      <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>
+                        {{ role_labels.get(r, r) }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                    <button class="btn-set-role" type="submit">Set</button>
+                  </form>
+                  {% elif email == current_email %}
+                  <em style="color:var(--muted);font-size:.85rem;">You</em>
+                  {% else %}
+                  <em style="color:var(--muted);font-size:.82rem;">—</em>
+                  {% endif %}
+                </td>
+                {% endif %}
+                {% if role_perm('can_delete_user') %}
+                <td>
+                  {% if email != current_email and u.can_modify %}
+                  <form action="{{ url_for('delete_user', email=email) }}" method="POST" class="action-form"
+                        onsubmit="return confirm('Permanently delete {{ u.display_name }}?');">
+                    <button class="btn-delete">🗑 Delete</button>
+                  </form>
+                  {% else %}
+                  <em style="color:var(--muted);font-size:.82rem;">—</em>
+                  {% endif %}
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+          {% if not ns.any_approved %}
+          <tr class="empty-row"><td colspan="6">No approved users yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Rejected ── -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Rejected</span>
+        <span class="count-badge badge-rejected">{{ rejected|length }}</span>
+      </div>
+      <table class="user-table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Type</th><th>Auto-delete in</th>
+          {% if role_perm('can_approve_users') %}<th>Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for email, u in rejected.items() %}
+          <tr>
+            <td><strong>{{ u.display_name }}</strong></td>
+            <td>{{ email }}</td>
+            <td><span class="type-badge {{ u.user_type }}">{{ u.user_type }}</span></td>
+            <td style="font-size:.83rem; color:var(--muted);">
+              {% if u.days_left is not none %}{{ u.days_left }} day(s){% else %}—{% endif %}
+            </td>
+            {% if role_perm('can_approve_users') %}
+            <td>
+              <form action="{{ url_for('approve_user', email=email) }}" method="POST" class="action-form">
+                <button class="btn-approve">↩ Re-approve</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="5">No rejected users</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+// All approved user data embedded for instant client-side search
+const ALL_USERS = {
+  {% for email, u in approved.items() %}
+  "{{ email }}": {
+    display_name: {{ u.display_name | tojson }},
+    user_type: {{ u.user_type | tojson }},
+    role: {{ u.role | tojson }},
+    role_label: {{ u.role_label | tojson }},
+    role_badge: {{ u.role_badge | tojson }},
+    grade: {{ u.get('grade', '') | tojson }},
+    department: {{ u.get('department', '') | tojson }},
+    title: {{ u.get('title', '') | tojson }},
+    writeup_count: {{ u.writeup_count }},
+    created_at: {{ u.get('created_at', '') | tojson }},
+  },
+  {% endfor %}
+};
+
+function lookupByEmail(email) {
+  document.getElementById('lookup-input').value = email;
+  lookupUser();
+  document.querySelector('.lookup-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function lookupUser() {
+  const query = document.getElementById('lookup-input').value.trim().toLowerCase();
+  const resultEl = document.getElementById('lookup-result');
+
+  if (!query) {
+    resultEl.innerHTML = '';
+    return;
+  }
+
+  resultEl.innerHTML = '<p class="lookup-loading">Searching…</p>';
+
+  // Find matching users by email or display name
+  const matches = Object.entries(ALL_USERS).filter(([email, u]) =>
+    email.toLowerCase().includes(query) ||
+    u.display_name.toLowerCase().includes(query)
+  );
+
+  if (matches.length === 0) {
+    resultEl.innerHTML = '<div class="lookup-error">No approved user found matching that query.</div>';
+    return;
+  }
+
+  // If multiple matches, show list; otherwise auto-load first
+  if (matches.length === 1) {
+    await showProfile(matches[0][0], matches[0][1]);
+  } else {
+    // Show a quick pick list
+    const listHtml = matches.map(([email, u]) =>
+      `<div style="padding:.5rem 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <span><strong>${u.display_name}</strong> <span style="color:var(--muted);font-size:.82rem;">${email}</span></span>
+        <button class="btn-set-role" style="font-size:.8rem;" onclick="lookupByEmail('${email}')">View</button>
+       </div>`
+    ).join('');
+    resultEl.innerHTML = `<div style="margin-top:.5rem;">${listHtml}</div>`;
+  }
+}
+
+async function showProfile(email, u) {
+  const resultEl = document.getElementById('lookup-result');
+  resultEl.innerHTML = '<p class="lookup-loading">Loading profile…</p>';
+
+  let classes = [];
+  try {
+    const resp = await fetch(`/admin/user-lookup?email=${encodeURIComponent(email)}`);
+    const data = await resp.json();
+    if (data.ok) classes = data.classes;
+  } catch(e) {
+    // Silently fall through — show profile without classes
+  }
+
+  const initials = u.display_name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+
+  const classesHtml = classes.length
+    ? `<ul class="class-list">
+        ${classes.map(c =>
+          `<li>
+            <span>${c.name} <span style="color:var(--muted);font-size:.8rem;">— ${c.subject}</span></span>
+            <span class="class-role ${c.is_teacher ? 'teacher' : ''}">${c.is_teacher ? 'Teacher' : 'Member'}</span>
+          </li>`
+        ).join('')}
+       </ul>`
+    : `<p class="no-classes">Not enrolled in any classes.</p>`;
+
+  const detailLine = u.user_type === 'student'
+    ? (u.grade ? `Grade ${u.grade}` : '')
+    : [u.title, u.department].filter(Boolean).join(' — ');
+
+  const joined = u.created_at
+    ? new Date(u.created_at).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })
+    : 'Unknown';
+
+  resultEl.innerHTML = `
+    <div class="profile-card">
+      <div class="profile-avatar">${initials}</div>
+      <div class="profile-info">
+        <h3>${u.display_name}</h3>
+        <div class="profile-email">${email}</div>
+        <div class="profile-meta">
+          <span class="meta-tag ${u.user_type}">${u.user_type}</span>
+          <span class="meta-tag role">
+            <span class="role-badge ${u.role_badge}" style="font-size:.72rem;">${u.role_label}</span>
+          </span>
+          ${u.writeup_count > 0 ? `<span class="meta-tag writeups">⚠ ${u.writeup_count} write-up${u.writeup_count !== 1 ? 's' : ''}</span>` : ''}
+          ${detailLine ? `<span class="meta-tag staff" style="text-transform:none;font-weight:400;">${detailLine}</span>` : ''}
+        </div>
+        <div style="font-size:.8rem; color:var(--muted); margin-bottom:.85rem;">Joined ${joined}</div>
+        <div class="profile-section-title">Classes (${classes.length})</div>
+        ${classesHtml}
+        <div style="margin-top:.85rem; display:flex; gap:.6rem; flex-wrap:wrap;">
+          <a href="/writeups/${email}" target="_blank" class="btn-set-role" style="text-decoration:none;font-size:.82rem;">View Write-Ups</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Allow pressing Enter in the lookup box
+document.getElementById('lookup-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') lookupUser();
+});
+</script>
+{% endblock %}

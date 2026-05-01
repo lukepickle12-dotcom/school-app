@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NHPS Portal{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:   #0a1628;
+      --blue:   #1a3a6b;
+      --accent: #e8a020;
+      --light:  #f0f4fb;
+      --white:  #ffffff;
+      --red:    #c0392b;
+      --green:  #1a7a4a;
+      --text:   #1e2d42;
+      --muted:  #6b7a92;
+      --border: #d0d9e8;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--light);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    h1, h2, h3 { font-family: 'Syne', sans-serif; }
+
+    /* Flash messages */
+    .flash-wrap { position: fixed; top: 1rem; right: 1rem; z-index: 999; display: flex; flex-direction: column; gap: .5rem; }
+    .flash {
+      padding: .75rem 1.2rem;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 500;
+      animation: slideIn .3s ease;
+      max-width: 340px;
+    }
+    .flash.error   { background: #fdecea; color: var(--red);   border-left: 4px solid var(--red); }
+    .flash.success { background: #e8f5ee; color: var(--green); border-left: 4px solid var(--green); }
+    .flash.info    { background: #e8f0fb; color: var(--blue);  border-left: 4px solid var(--blue); }
+    @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<div class="flash-wrap">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+{% block content %}{% endblock %}
+
+<script>
+  // auto-dismiss flash messages
+  setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(el => {
+      el.style.transition = 'opacity .5s';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 500);
+    });
+  }, 4000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
