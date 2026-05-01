@@ -1039,5 +1039,7 @@ def remove_student(class_id):
     return redirect(url_for("view_classroom", slug=classroom["url_slug"]))
 
 
+import os
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
