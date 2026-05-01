@@ -11,7 +11,7 @@
     "birthday": "2012-08-29"
   },
   "dev@nhps.net": {
-    "password_hash": "scrypt:32768:8:1$apSbdJKbwdAOrX50$0ba47175332b86812cd67d285731f1ff1968942c49931ba12e1b5a81f8639b3d843f2322e360f31ad235bc0387b7b28444ecd85544265f0f8e2bcca0d86183ed",
+    "password_hash": "scrypt:32768:8:1$3TdgHjmUQIv2aZ8z$30e33a1e43ddebb8d5b95ccdaaa3f1be9f01d42a2539959eabda7fdd18f27b852bbd8c2eb6e44a0d209d7cb01528c668d26551cf23ac72289843c25233e38635",
     "user_type": "staff",
     "first_name": "Developer",
     "last_name": "Account",
