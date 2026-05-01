@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% block title %}Write-Ups — {{ student.display_name }}{% endblock %}
+
+{% block extra_css %}
+.dashboard { min-height: 100vh; display: flex; flex-direction: column; }
+
+.navbar {
+  background: var(--navy);
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--white); letter-spacing: .05em; }
+.nav-logo span { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.btn-back { background: rgba(232,160,32,.15); border: 1px solid rgba(232,160,32,.3); color: var(--accent); padding: .35rem .9rem; border-radius: 6px; font-size: .85rem; text-decoration: none; transition: all .2s; }
+.btn-back:hover { background: rgba(232,160,32,.25); }
+.btn-logout { background: transparent; border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.7); padding: .35rem .9rem; border-radius: 6px; font-size: .85rem; cursor: pointer; text-decoration: none; transition: all .2s; }
+.btn-logout:hover { background: rgba(255,255,255,.08); color: var(--white); }
+
+.main { flex: 1; padding: 2.5rem; max-width: 900px; margin: 0 auto; width: 100%; }
+
+/* ── Student header card ── */
+.student-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+}
+.student-avatar {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.student-info h1 { font-size: 1.4rem; color: var(--navy); margin-bottom: .2rem; }
+.student-email  { font-size: .85rem; color: var(--muted); margin-bottom: .5rem; }
+.student-meta   { display: flex; flex-wrap: wrap; gap: .5rem; }
+.meta-tag {
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.meta-tag.student  { background: rgba(232,160,32,.15); color: #b87a10; }
+.meta-tag.staff    { background: rgba(26,58,107,.1); color: var(--blue); }
+.meta-tag.count-ok { background: rgba(26,122,74,.12); color: var(--green); }
+.meta-tag.count-warn { background: rgba(192,57,43,.1); color: var(--red); }
+
+/* ── Issue write-up form ── */
+.issue-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+}
+.issue-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  color: var(--navy);
+  margin-bottom: 1rem;
+}
+.form-row { display: flex; flex-direction: column; gap: .75rem; }
+.form-group { display: flex; flex-direction: column; gap: .3rem; }
+.form-label {
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.form-input, .form-textarea {
+  padding: .55rem .9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+  color: var(--text);
+  background: var(--light);
+  transition: border-color .2s;
+  resize: vertical;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--red);
+}
+.form-textarea { min-height: 90px; }
+.btn-issue {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  padding: .55rem 1.4rem;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: opacity .2s;
+}
+.btn-issue:hover { opacity: .85; }
+
+/* ── Write-up list ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.count-pill {
+  padding: .2rem .7rem;
+  border-radius: 20px;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.count-pill.zero { background: rgba(26,122,74,.12); color: var(--green); }
+.count-pill.some { background: rgba(192,57,43,.1); color: var(--red); }
+
+.writeup-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.writeup-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--red);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.03);
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  animation: slideIn .25s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.writeup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.writeup-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.writeup-date {
+  font-size: .78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.writeup-description {
+  font-size: .9rem;
+  color: var(--text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.writeup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding-top: .4rem;
+  border-top: 1px solid var(--border);
+}
+.writeup-issuer {
+  font-size: .8rem;
+  color: var(--muted);
+}
+.writeup-issuer strong { color: var(--text); }
+
+.btn-delete {
+  background: transparent;
+  border: 1px solid rgba(192,57,43,.3);
+  color: var(--red);
+  padding: .25rem .7rem;
+  border-radius: 6px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-delete:hover { background: var(--red); color: #fff; }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--white);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+}
+.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+.empty-state p { font-size: .95rem; }
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <nav class="navbar">
+    <div class="nav-logo">Tester <span>Portal</span></div>
+    <div class="nav-right">
+      {% if role_perm('can_access_admin') %}
+      <a href="{{ url_for('admin') }}" class="btn-back">← Admin</a>
+      {% else %}
+      <a href="{{ url_for('dashboard') }}" class="btn-back">← Dashboard</a>
+      {% endif %}
+      <a href="{{ url_for('logout') }}" class="btn-logout">Sign out</a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- Student profile header -->
+    <div class="student-card">
+      {% set initials = (student.first_name[0] if student.first_name else '') + (student.last_name[0] if student.last_name else '') %}
+      <div class="student-avatar">{{ initials.upper() }}</div>
+      <div class="student-info">
+        <h1>{{ student.display_name }}</h1>
+        <div class="student-email">{{ student_email }}</div>
+        <div class="student-meta">
+          <span class="meta-tag {{ student.user_type }}">{{ student.user_type }}</span>
+          {% if student.user_type == 'student' and student.grade %}
+          <span class="meta-tag student">Grade {{ student.grade }}</span>
+          {% elif student.user_type == 'staff' %}
+          {% if student.title %}<span class="meta-tag staff">{{ student.title }}</span>{% endif %}
+          {% if student.department %}<span class="meta-tag staff">{{ student.department }}</span>{% endif %}
+          {% endif %}
+          {% if writeups|length == 0 %}
+          <span class="meta-tag count-ok">✓ No write-ups</span>
+          {% else %}
+          <span class="meta-tag count-warn">⚠ {{ writeups|length }} write-up{{ 's' if writeups|length != 1 }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Issue write-up form (only for authorized roles) -->
+    {% if can_issue %}
+    <div class="issue-card">
+      <h2>➕ Issue a Write-Up</h2>
+      <form action="{{ url_for('add_writeup', student_email=student_email) }}" method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="wu-title">Title / Reason</label>
+            <input
+              id="wu-title"
+              name="title"
+              type="text"
+              class="form-input"
+              placeholder="e.g. Disrupting class, Dress code violation…"
+              required
+              maxlength="120"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="wu-desc">Description</label>
+            <textarea
+              id="wu-desc"
+              name="description"
+              class="form-textarea"
+              placeholder="Describe the incident in detail…"
+              required
+              maxlength="1000"
+            ></textarea>
+          </div>
+          <button type="submit" class="btn-issue">Issue Write-Up</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Write-up history -->
+    <div class="section-header">
+      <span class="section-title">Write-Up History</span>
+      <span class="count-pill {{ 'some' if writeups|length > 0 else 'zero' }}">
+        {{ writeups|length }}
+      </span>
+    </div>
+
+    {% if writeups %}
+    <div class="writeup-list">
+      {% for w in writeups %}
+      <div class="writeup-card">
+        <div class="writeup-header">
+          <span class="writeup-title">{{ w.title }}</span>
+          <span class="writeup-date">{{ fmt_date(w.date) }}</span>
+        </div>
+        <div class="writeup-description">{{ w.description }}</div>
+        <div class="writeup-footer">
+          <span class="writeup-issuer">
+            Issued by <strong>{{ w.issuer_name }}</strong>
+          </span>
+          {% if can_delete %}
+          <form action="{{ url_for('delete_writeup', student_email=student_email, writeup_id=w.id) }}" method="POST"
+                onsubmit="return confirm('Delete this write-up? This cannot be undone.');">
+            <button class="btn-delete" type="submit">🗑 Delete</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <p>No write-ups on record for {{ student.display_name }}.</p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+{% endblock %}

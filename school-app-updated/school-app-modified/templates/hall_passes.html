@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %}Hall Passes{% endblock %}
+
+{% block extra_css %}
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+
+.hp-page { min-height: 100vh; background: var(--light); display: flex; flex-direction: column; }
+
+/* Topbar */
+.hp-topbar { background: var(--navy); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
+.hp-topbar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; letter-spacing: .05em; }
+.hp-topbar-logo span { color: var(--accent); }
+.btn-back { display: flex; align-items: center; gap: .4rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.75); padding: .3rem .85rem; border-radius: 7px; font-size: .82rem; text-decoration: none; transition: all .18s; }
+.btn-back:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+/* Hero */
+.hp-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3a6b 100%); padding: 2.5rem 2rem 4rem; position: relative; overflow: hidden; }
+.hp-hero::before { content: '🪪'; position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); font-size: 7rem; opacity: .07; pointer-events: none; line-height: 1; }
+.hp-hero::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 36px; background: var(--light); clip-path: ellipse(55% 100% at 50% 100%); }
+.hp-hero-inner { max-width: 1100px; margin: 0 auto; }
+.hp-hero h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: .4rem; }
+.hp-hero p { font-size: .9rem; color: rgba(255,255,255,.5); }
+
+/* Main */
+.hp-main { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2rem 2rem 3rem; }
+
+/* Stats bar */
+.stats-bar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
+.stat-chip { display: flex; align-items: center; gap: .6rem; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: .65rem 1.1rem; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
+.sc-val { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--navy); line-height: 1; }
+.sc-label { font-size: .73rem; color: var(--muted); margin-top: .1rem; }
+.stat-chip.active { border-color: rgba(26,200,100,.35); background: rgba(26,200,100,.04); }
+.stat-chip.active .sc-val { color: var(--green); }
+.btn-issue { margin-left: auto; display: flex; align-items: center; gap: .5rem; background: var(--accent); color: var(--navy); border: none; padding: .65rem 1.3rem; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 700; cursor: pointer; text-decoration: none; transition: all .18s; box-shadow: 0 2px 12px rgba(232,160,32,.25); }
+.btn-issue:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 18px rgba(232,160,32,.35); }
+
+/* Section header */
+.section-header { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.1rem; margin-top: 1.5rem; }
+.section-title { font-family: 'Syne', sans-serif; font-size: .95rem; font-weight: 700; color: var(--text); letter-spacing: .02em; }
+.section-count { padding: .15rem .55rem; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+.section-count.green { background: rgba(26,200,100,.15); color: var(--green); }
+.section-count.gray { background: rgba(107,122,146,.15); color: var(--muted); }
+
+/* Pass cards */
+.passes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.pass-card { background: var(--white); border: 1.5px solid rgba(26,200,100,.3); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(26,200,100,.08); display: flex; flex-direction: column; transition: box-shadow .2s, transform .2s; }
+.pass-card:hover { box-shadow: 0 6px 28px rgba(26,200,100,.14); transform: translateY(-2px); }
+.pass-card.expiring { border-color: rgba(232,160,32,.5); box-shadow: 0 2px 16px rgba(232,160,32,.1); }
+
+.pass-header { background: linear-gradient(90deg, rgba(26,200,100,.12) 0%, rgba(26,200,100,.04) 100%); padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(26,200,100,.15); }
+.pass-card.expiring .pass-header { background: linear-gradient(90deg, rgba(232,160,32,.14) 0%, rgba(232,160,32,.04) 100%); border-bottom-color: rgba(232,160,32,.2); }
+
+.pass-status-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; border-radius: 20px; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.badge-active { background: rgba(26,200,100,.18); color: #14a86a; }
+.badge-expiring { background: rgba(232,160,32,.2); color: #b87d00; }
+
+.pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.75); } }
+
+.btn-revoke { background: transparent; border: 1px solid rgba(192,57,43,.3); color: var(--red); padding: .22rem .65rem; border-radius: 6px; font-size: .75rem; font-weight: 600; cursor: pointer; transition: all .16s; font-family: 'DM Sans', sans-serif; }
+.btn-revoke:hover { background: rgba(192,57,43,.08); border-color: var(--red); }
+
+.pass-body { padding: 1rem; flex: 1; }
+.pass-student { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: .65rem; display: flex; align-items: center; gap: .4rem; }
+.pass-meta-row { display: flex; align-items: center; gap: .4rem; font-size: .83rem; color: var(--muted); margin-bottom: .4rem; }
+.pass-meta-row strong { color: var(--text); }
+.pass-notes { margin-top: .5rem; padding: .5rem .75rem; background: var(--light); border-radius: 8px; font-size: .8rem; color: var(--text); font-style: italic; border-left: 2px solid var(--border); }
+
+/* Timer */
+.pass-timer { margin-top: .9rem; padding: .85rem 1rem; background: linear-gradient(135deg, rgba(26,200,100,.07), rgba(26,200,100,.02)); border: 1px solid rgba(26,200,100,.18); border-radius: 10px; text-align: center; }
+.pass-card.expiring .pass-timer { background: linear-gradient(135deg, rgba(232,160,32,.1), rgba(232,160,32,.03)); border-color: rgba(232,160,32,.25); }
+.timer-label { font-size: .72rem; color: var(--muted); margin-bottom: .25rem; letter-spacing: .04em; text-transform: uppercase; }
+.timer-display { font-family: 'DM Mono', monospace; font-size: 1.7rem; font-weight: 500; color: var(--green); letter-spacing: .05em; line-height: 1; margin-bottom: .5rem; }
+.pass-card.expiring .timer-display { color: var(--accent); }
+.timer-bar-track { height: 5px; background: rgba(0,0,0,.07); border-radius: 99px; overflow: hidden; }
+.timer-bar-fill { height: 100%; border-radius: 99px; background: var(--green); transition: width .9s linear, background .3s; }
+.timer-dur { font-size: .73rem; color: var(--muted); margin-top: .35rem; }
+
+.pass-footer { padding: .55rem 1rem; background: rgba(0,0,0,.02); border-top: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--muted); display: flex; align-items: center; justify-content: space-between; }
+
+/* Empty state */
+.empty-state { padding: 2.5rem 1.5rem; text-align: center; background: var(--white); border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); margin-bottom: 1.5rem; }
+.empty-icon { font-size: 2.2rem; margin-bottom: .5rem; }
+.empty-msg { font-size: .88rem; }
+
+/* History table */
+.history-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+.history-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.history-table th { padding: .75rem 1rem; text-align: left; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: rgba(0,0,0,.02); border-bottom: 1px solid var(--border); }
+.history-table td { padding: .75rem 1rem; border-bottom: 1px solid rgba(0,0,0,.04); color: var(--text); vertical-align: middle; }
+.history-table tr:last-child td { border-bottom: none; }
+.history-table tr:hover td { background: rgba(0,0,0,.015); }
+.dest-pill { display: inline-flex; align-items: center; gap: .25rem; background: var(--light); border: 1px solid var(--border); border-radius: 6px; padding: .2rem .55rem; font-size: .8rem; font-weight: 500; }
+.status-badge { display: inline-block; padding: .2rem .6rem; border-radius: 20px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.status-badge.revoked { background: rgba(192,57,43,.12); color: var(--red); }
+.status-badge.expired { background: rgba(107,122,146,.12); color: var(--muted); }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,22,40,.55); backdrop-filter: blur(4px); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--white); border-radius: 18px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: modalIn .25s ease; overflow: hidden; }
+@keyframes modalIn { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-head { background: var(--navy); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+.modal-head h2 { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: #fff; }
+.modal-close { background: rgba(255,255,255,.1); border: none; color: rgba(255,255,255,.7); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.modal-close:hover { background: rgba(255,255,255,.2); color: #fff; }
+.modal-body { padding: 1.5rem; }
+.field-group { margin-bottom: 1.1rem; }
+.field-label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
+.field-req { color: var(--red); }
+.field-select, .field-input, .field-textarea { width: 100%; padding: .65rem .9rem; border: 1.5px solid var(--border); border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--text); background: var(--white); transition: border-color .15s, box-shadow .15s; appearance: none; }
+.field-select:focus, .field-input:focus, .field-textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,58,107,.1); }
+.field-textarea { resize: vertical; min-height: 72px; }
+.modal-foot { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: .75rem; }
+.btn-cancel { background: var(--light); border: 1px solid var(--border); color: var(--muted); padding: .6rem 1.1rem; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: .88rem; font-weight: 500; cursor: pointer; transition: all .15s; }
+.btn-cancel:hover { border-color: var(--blue); color: var(--navy); }
+.btn-submit { background: var(--navy); color: #fff; border: none; padding: .6rem 1.4rem; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: .88rem; font-weight: 600; cursor: pointer; transition: all .18s; }
+.btn-submit:hover { background: var(--blue); }
+
+@media (max-width: 640px) { .passes-grid { grid-template-columns: 1fr; } .stats-bar { flex-direction: column; } .btn-issue { margin-left: 0; } .hp-hero h1 { font-size: 1.6rem; } }
+{% endblock %}
+
+{% block content %}
+<div class="hp-page">
+  <div class="hp-topbar">
+    <div class="hp-topbar-logo">Tester <span>Portal</span></div>
+    <a href="{{ url_for('dashboard') }}" class="btn-back">← Dashboard</a>
+  </div>
+
+  <div class="hp-hero">
+    <div class="hp-hero-inner">
+      <h1>🪪 Hall Passes</h1>
+      <p>{% if can_view %}Monitor and manage all active and recent passes{% else %}Your hall pass history{% endif %}</p>
+    </div>
+  </div>
+
+  <main class="hp-main">
+    <div class="stats-bar">
+      <div class="stat-chip active">
+        <span style="font-size:1.2rem;">✅</span>
+        <div><div class="sc-val">{{ active_passes|length }}</div><div class="sc-label">Active</div></div>
+      </div>
+      <div class="stat-chip">
+        <span style="font-size:1.2rem;">🕑</span>
+        <div><div class="sc-val">{{ expired_passes|length }}</div><div class="sc-label">History</div></div>
+      </div>
+      {% if can_issue %}
+      <button class="btn-issue" onclick="openModal()">＋ Issue Pass</button>
+      {% endif %}
+    </div>
+
+    <!-- Active Passes -->
+    <div class="section-header">
+      <span class="section-title">Active Passes</span>
+      <span class="section-count green">{{ active_passes|length }}</span>
+    </div>
+
+    {% if active_passes %}
+    <div class="passes-grid">
+      {% for p in active_passes %}
+      <div class="pass-card" data-expires="{{ p.expires_at }}">
+        <div class="pass-header">
+          <span class="pass-status-badge badge-active"><span class="pulse-dot"></span> Active</span>
+          {% if can_issue %}
+          <form method="post" action="{{ url_for('revoke_hall_pass', pass_id=p.id) }}" onsubmit="return confirm('Revoke this pass for {{ p.student_name }}?')">
+            <button type="submit" class="btn-revoke">✕ Revoke</button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="pass-body">
+          {% if can_view %}<div class="pass-student">👤 {{ p.student_name }}</div>{% endif %}
+          <div class="pass-meta-row">📍 <span>Destination: <strong>{{ p.destination }}</strong></span></div>
+          <div class="pass-meta-row">👨‍🏫 <span>Issued by <strong>{{ p.issuer_name }}</strong></span></div>
+          <div class="pass-meta-row">🕐 <span>{{ p.issued_at | string | truncate(19, killwords=True, end='') | replace('T',' ') }} UTC</span></div>
+          {% if p.notes %}<div class="pass-notes">{{ p.notes }}</div>{% endif %}
+          <div class="pass-timer">
+            <div class="timer-label">Time Remaining</div>
+            <div class="timer-display countdown-display" data-expires="{{ p.expires_at }}">--:--</div>
+            <div class="timer-bar-track">
+              <div class="timer-bar-fill countdown-bar" data-issued="{{ p.issued_at }}" data-expires="{{ p.expires_at }}" style="width:100%"></div>
+            </div>
+            <div class="timer-dur">{{ p.duration_min }}-minute pass</div>
+          </div>
+        </div>
+        <div class="pass-footer">
+          <span>ID: {{ p.id[:8] }}…</span>
+          <span>{{ p.duration_min }} min</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🟢</div>
+      <div class="empty-msg">No active hall passes right now — all clear!</div>
+    </div>
+    {% endif %}
+
+    <!-- History -->
+    <div class="section-header">
+      <span class="section-title">Expired / History</span>
+      <span class="section-count gray">{{ expired_passes|length }}</span>
+    </div>
+
+    {% if expired_passes %}
+    <div class="history-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            {% if can_view %}<th>Student</th>{% endif %}
+            <th>Destination</th>
+            <th>Duration</th>
+            <th>Issued By</th>
+            <th>Issued At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in expired_passes %}
+          <tr>
+            {% if can_view %}<td><strong>{{ p.student_name }}</strong></td>{% endif %}
+            <td><span class="dest-pill">📍 {{ p.destination }}</span></td>
+            <td>{{ p.duration_min }} min</td>
+            <td>{{ p.issuer_name }}</td>
+            <td style="font-family:'DM Mono',monospace;font-size:.78rem;color:var(--muted);">{{ p.issued_at | string | truncate(19, killwords=True, end='') | replace('T',' ') }}</td>
+            <td>
+              {% if p.get('revoked') %}
+              <span class="status-badge revoked">Revoked</span>
+              {% else %}
+              <span class="status-badge expired">Expired</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-msg">No expired passes to show yet.</div>
+    </div>
+    {% endif %}
+  </main>
+</div>
+
+{% if can_issue %}
+<div class="modal-overlay" id="issueModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>🪪 Issue Hall Pass</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form method="post" action="{{ url_for('issue_hall_pass') }}">
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Student <span class="field-req">*</span></label>
+          <select name="student_email" class="field-select" required>
+            <option value="" disabled selected>— Select a student —</option>
+            {% for s in student_list %}
+            <option value="{{ s.email }}">{{ s.display_name }} ({{ s.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Destination <span class="field-req">*</span></label>
+          <select name="destination" class="field-select" id="destinationSelect" required>
+            <option value="" disabled selected>— Select destination —</option>
+            {% for dest in destinations %}
+            <option value="{{ dest }}">{{ dest }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group" id="customDestDiv" style="display:none;">
+          <label class="field-label">Specify Destination <span class="field-req">*</span></label>
+          <input type="text" name="custom_destination" class="field-input" placeholder="e.g. Room 204" id="customDestInput">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Duration <span class="field-req">*</span></label>
+          <select name="duration" class="field-select" required>
+            <option value="" disabled selected>— Select duration —</option>
+            {% for d in durations %}
+            <option value="{{ d }}">{{ d }} minutes</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional)</span></label>
+          <textarea name="notes" class="field-textarea" placeholder="Any additional context…"></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-submit">Issue Pass →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+function openModal()  { document.getElementById('issueModal').classList.add('open'); }
+function closeModal() { document.getElementById('issueModal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.getElementById('destinationSelect')?.addEventListener('change', function() {
+  const div = document.getElementById('customDestDiv');
+  const input = document.getElementById('customDestInput');
+  if (this.value === 'Other') { div.style.display = 'block'; input.required = true; }
+  else { div.style.display = 'none'; input.required = false; }
+});
+
+function updateCountdowns() {
+  const now = Date.now();
+  document.querySelectorAll('.countdown-display').forEach(el => {
+    const diff = Math.max(0, new Date(el.dataset.expires).getTime() - now);
+    el.textContent = `${String(Math.floor(diff/60000)).padStart(2,'0')}:${String(Math.floor((diff%60000)/1000)).padStart(2,'0')}`;
+  });
+  document.querySelectorAll('.countdown-bar').forEach(bar => {
+    const issued = new Date(bar.dataset.issued).getTime();
+    const expires = new Date(bar.dataset.expires).getTime();
+    const pct = Math.max(0, Math.min(100, 100 - ((now - issued) / (expires - issued) * 100)));
+    bar.style.width = pct + '%';
+    const card = bar.closest('.pass-card');
+    const badge = card?.querySelector('.pass-status-badge');
+    const timer = card?.querySelector('.timer-display');
+    if (pct < 25) {
+      bar.style.background = 'var(--red)';
+      card?.classList.add('expiring');
+      if (badge) { badge.className = 'pass-status-badge badge-expiring'; badge.innerHTML = '<span class="pulse-dot"></span> Expiring'; }
+      if (timer) timer.style.color = 'var(--red)';
+    } else if (pct < 50) {
+      bar.style.background = 'var(--accent)';
+      card?.classList.add('expiring');
+      if (badge) { badge.className = 'pass-status-badge badge-expiring'; badge.innerHTML = '<span class="pulse-dot"></span> Expiring'; }
+      if (timer) timer.style.color = 'var(--accent)';
+    }
+  });
+}
+updateCountdowns();
+setInterval(updateCountdowns, 1000);
+</script>
+{% endblock %}

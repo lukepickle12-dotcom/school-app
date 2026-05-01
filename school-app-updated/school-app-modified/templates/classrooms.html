@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}My Classes — Tester Portal{% endblock %}
+
+{% block extra_css %}
+.dashboard { min-height:100vh; display:flex; flex-direction:column; }
+.navbar { background:var(--navy); padding:0 2.5rem; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+.nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; color:var(--white); letter-spacing:.05em; }
+.nav-logo span { color:var(--accent); }
+.nav-right { display:flex; align-items:center; gap:1rem; }
+.btn-nav { background:transparent; border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7); padding:.35rem .9rem; border-radius:6px; font-size:.85rem; cursor:pointer; text-decoration:none; transition:all .2s; }
+.btn-nav:hover { background:rgba(255,255,255,.08); color:var(--white); }
+
+.main { flex:1; padding:2.5rem; max-width:1100px; margin:0 auto; width:100%; }
+
+.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; gap:1rem; flex-wrap:wrap; }
+.page-title { font-size:2rem; color:var(--navy); }
+.page-sub { color:var(--muted); font-size:.95rem; margin-top:.2rem; }
+
+.btn-primary { background:var(--navy); color:#fff; border:none; padding:.7rem 1.4rem; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; cursor:pointer; transition:background .2s; white-space:nowrap; }
+.btn-primary:hover { background:var(--blue); }
+
+.panels { display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+@media(max-width:700px) { .panels { grid-template-columns:1fr; } }
+
+.panel { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:1.5rem; }
+.panel-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; color:var(--navy); margin-bottom:1.2rem; display:flex; align-items:center; gap:.5rem; }
+
+.class-card {
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:1.1rem;
+  margin-bottom:.75rem;
+  text-decoration:none;
+  display:block;
+  transition:all .2s;
+  position:relative;
+}
+.class-card:hover { border-color:var(--blue); box-shadow:0 2px 12px rgba(26,58,107,.1); transform:translateY(-1px); }
+.class-card-name { font-family:'Syne',sans-serif; font-weight:700; color:var(--navy); font-size:1rem; margin-bottom:.2rem; }
+.class-card-subject { font-size:.8rem; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem; }
+.class-card-meta { display:flex; gap:.75rem; font-size:.82rem; color:var(--muted); }
+.class-card-code { position:absolute; top:.9rem; right:1rem; font-family:'Syne',sans-serif; font-weight:800; color:var(--navy); opacity:.15; font-size:.85rem; letter-spacing:.1em; }
+
+.empty-state { text-align:center; padding:2rem 1rem; color:var(--muted); font-style:italic; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(10,22,40,.5); z-index:500; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--white); border-radius:16px; padding:2rem; width:100%; max-width:460px; box-shadow:0 8px 40px rgba(0,0,0,.2); }
+.modal h3 { font-size:1.4rem; color:var(--navy); margin-bottom:.3rem; }
+.modal .sub { color:var(--muted); font-size:.9rem; margin-bottom:1.5rem; }
+.form-group { margin-bottom:1rem; }
+.form-group label { display:block; font-size:.78rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
+.form-group input, .form-group select {
+  width:100%; padding:.72rem 1rem;
+  border:1.5px solid var(--border); border-radius:8px;
+  font-family:'DM Sans',sans-serif; font-size:.93rem;
+  color:var(--text); background:var(--light);
+  outline:none; -webkit-appearance:none;
+}
+.form-group input:focus, .form-group select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(26,58,107,.1); background:var(--white); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.modal-actions { display:flex; gap:.75rem; margin-top:1.25rem; }
+.btn-cancel { flex:1; padding:.72rem; border:1.5px solid var(--border); border-radius:8px; background:transparent; color:var(--text); font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-cancel:hover { border-color:var(--navy); }
+.btn-submit { flex:2; padding:.72rem; background:var(--navy); color:#fff; border:none; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; cursor:pointer; transition:background .2s; }
+.btn-submit:hover { background:var(--blue); }
+
+.join-box { display:flex; gap:.75rem; }
+.join-box input { flex:1; padding:.7rem 1rem; border:1.5px solid var(--border); border-radius:8px; font-size:.93rem; font-family:'DM Sans',sans-serif; outline:none; }
+.join-box input:focus { border-color:var(--blue); }
+.join-box button { background:var(--accent); color:var(--navy); border:none; padding:.7rem 1.2rem; border-radius:8px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+.join-box button:hover { opacity:.85; }
+
+.slug-preview { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
+.slug-preview span { color:var(--blue); font-weight:600; }
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <nav class="navbar">
+    <div class="nav-logo">Tester <span>Portal</span></div>
+    <div class="nav-right">
+      <a href="{{ url_for('dashboard') }}" class="btn-nav">← Dashboard</a>
+      <a href="{{ url_for('logout') }}" class="btn-nav">Sign out</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">My Classes</div>
+        <div class="page-sub">Manage and access your classrooms</div>
+      </div>
+      {% if user_type == 'staff' %}
+      <button class="btn-primary" onclick="document.getElementById('createModal').classList.add('open')">+ Create Class</button>
+      {% endif %}
+    </div>
+
+    <div class="panels">
+      <!-- Teaching / My Classes -->
+      <div class="panel">
+        {% if user_type == 'staff' %}
+        <div class="panel-title">🏫 Classes I Teach</div>
+        {% else %}
+        <div class="panel-title">📚 My Classes</div>
+        {% endif %}
+
+        {% for c in teaching %}
+        <a class="class-card" href="{{ url_for('view_classroom', slug=c.url_slug) }}">
+          <div class="class-card-code">{{ c.code }}</div>
+          <div class="class-card-subject">{{ c.subject }}</div>
+          <div class="class-card-name">{{ c.name }}</div>
+          <div class="class-card-meta">
+            <span>{{ c.period }}</span>
+            <span>·</span>
+            <span>{{ c.member_count }} student{{ 's' if c.member_count != 1 else '' }}</span>
+            <span>·</span>
+            <span>{{ c.year }}</span>
+          </div>
+        </a>
+        {% else %}
+        <div class="empty-state">
+          {% if user_type == 'staff' %}No classes yet. Create one! →{% else %}You haven't joined any classes yet.{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Join Class (students) / URL shortcut (staff) -->
+      <div class="panel">
+        {% if user_type == 'student' %}
+        <div class="panel-title">🔑 Join a Class</div>
+        <p style="color:var(--muted); font-size:.9rem; margin-bottom:1rem;">Enter the class code or visit the class URL your teacher shared.</p>
+        <form method="POST" action="{{ url_for('join_class') }}">
+          <div class="join-box">
+            <input type="text" name="code" placeholder="e.g. ABC123" maxlength="6" style="text-transform:uppercase; letter-spacing:.1em; font-weight:700;" required />
+            <button type="submit">Join</button>
+          </div>
+        </form>
+        {% else %}
+        <div class="panel-title">🔗 Class Links</div>
+        {% for c in teaching %}
+        <div style="background:var(--light); border-radius:8px; padding:.75rem 1rem; margin-bottom:.6rem; font-size:.88rem;">
+          <div style="font-weight:700; color:var(--navy); margin-bottom:.2rem;">{{ c.name }}</div>
+          <div style="color:var(--muted);">Code: <strong style="color:var(--navy); letter-spacing:.1em;">{{ c.code }}</strong></div>
+          <div style="color:var(--blue); font-size:.82rem; margin-top:.2rem;">/c/{{ c.url_slug }}</div>
+        </div>
+        {% else %}
+        <div class="empty-state">Create a class to see its links here.</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create Class Modal (staff only) -->
+{% if user_type == 'staff' %}
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>Create a Class</h3>
+    <p class="sub">Students will join using the generated class code or URL.</p>
+    <form method="POST" action="{{ url_for('create_class') }}">
+      <div class="form-group">
+        <label>Class Name</label>
+        <input type="text" name="name" placeholder="e.g. AP Biology — Period 3" required />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" name="subject" placeholder="e.g. Biology" required />
+        </div>
+        <div class="form-group">
+          <label>Period / Block</label>
+          <input type="text" name="period" placeholder="e.g. Period 3" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>School Year</label>
+        <input type="text" name="year" placeholder="e.g. 2025–2026" value="2025–2026" required />
+      </div>
+      <div class="form-group">
+        <label>Custom URL Slug <span style="font-weight:400; text-transform:none;">(optional)</span></label>
+        <input type="text" name="url_slug" id="slugInput" placeholder="e.g. smith-apbio-p3" pattern="[a-z0-9\-]+" />
+        <div class="slug-preview">URL will be: /c/<span id="slugPreview">your-slug</span></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn-submit">Create Class →</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  const slugInput = document.getElementById('slugInput');
+  const slugPreview = document.getElementById('slugPreview');
+  const nameInput = document.querySelector('input[name="name"]');
+
+  function toSlug(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+  nameInput.addEventListener('input', () => {
+    if (!slugInput.value) slugPreview.textContent = toSlug(nameInput.value) || 'your-slug';
+  });
+  slugInput.addEventListener('input', () => {
+    slugPreview.textContent = slugInput.value || toSlug(nameInput.value) || 'your-slug';
+  });
+  // Close modal on overlay click
+  document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+</script>
+{% endif %}
+{% endblock %}

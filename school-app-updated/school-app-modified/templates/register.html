@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Register — Tester Portal{% endblock %}
+
+{% block extra_css %}
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+}
+.auth-brand {
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.auth-brand::before { content:''; position:absolute; width:500px; height:500px; background:var(--blue); border-radius:50%; top:-100px; right:-200px; opacity:.4; }
+.auth-brand::after  { content:''; position:absolute; width:300px; height:300px; background:var(--accent); border-radius:50%; bottom:-80px; left:60px; opacity:.15; }
+.brand-badge { background:var(--accent); color:var(--navy); font-family:'Syne',sans-serif; font-weight:800; font-size:.75rem; letter-spacing:.15em; text-transform:uppercase; padding:.4rem .9rem; border-radius:4px; margin-bottom:2rem; position:relative; z-index:1; }
+.auth-brand h1 { color:var(--white); font-size:3rem; line-height:1.1; position:relative; z-index:1; margin-bottom:1rem; }
+.auth-brand h1 span { color:var(--accent); }
+.auth-brand p { color:#8fa8cc; font-size:1rem; line-height:1.6; max-width:320px; position:relative; z-index:1; }
+.hint-box { background:rgba(232,160,32,.12); border:1px solid rgba(232,160,32,.3); border-radius:8px; padding:.9rem 1rem; margin-top:2rem; position:relative; z-index:1; }
+.hint-box p { color:#c8b07a; font-size:.85rem; line-height:1.5; margin:0; }
+.hint-box strong { color:var(--accent); }
+
+.auth-form-side { display:flex; align-items:flex-start; justify-content:center; padding:3rem; background:var(--white); overflow-y:auto; }
+.auth-card { width:100%; max-width:440px; padding: 1rem 0; }
+.auth-card h2 { font-size:1.8rem; color:var(--navy); margin-bottom:.4rem; }
+.auth-card .sub { color:var(--muted); font-size:.95rem; margin-bottom:1.8rem; }
+
+.form-group { margin-bottom:1rem; }
+.form-group label { display:block; font-size:.8rem; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:.35rem; }
+.form-group input, .form-group select {
+  width:100%; padding:.72rem 1rem;
+  border:1.5px solid var(--border); border-radius:8px;
+  font-family:'DM Sans',sans-serif; font-size:.93rem;
+  color:var(--text); background:var(--light);
+  transition:border-color .2s,box-shadow .2s; outline:none;
+  -webkit-appearance:none; appearance:none;
+}
+.form-group select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a92' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; padding-right:2.5rem; }
+.form-group input:focus, .form-group select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(26,58,107,.1); background:var(--white); }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+
+.section-label { font-family:'Syne',sans-serif; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--navy); padding:.5rem 0 .25rem; border-top:1px solid var(--border); margin:.8rem 0 .6rem; }
+
+.password-strength { height:4px; border-radius:2px; margin-top:.4rem; background:var(--border); overflow:hidden; }
+.password-strength-bar { height:100%; width:0%; border-radius:2px; transition:width .3s,background .3s; }
+
+.btn-primary { width:100%; padding:.85rem; background:var(--navy); color:var(--white); border:none; border-radius:8px; font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; letter-spacing:.05em; cursor:pointer; transition:background .2s,transform .1s; margin-top:.75rem; }
+.btn-primary:hover { background:var(--blue); transform:translateY(-1px); }
+
+.auth-switch { text-align:center; margin-top:1.5rem; font-size:.9rem; color:var(--muted); }
+.auth-switch a { color:var(--blue); font-weight:500; text-decoration:none; }
+.auth-switch a:hover { text-decoration:underline; }
+
+#student-fields, #staff-fields { display:none; }
+
+@media (max-width:768px) { .auth-page { grid-template-columns:1fr; } .auth-brand { display:none; } .form-row { grid-template-columns:1fr; } }
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-brand">
+    <div class="brand-badge">Tester Portal</div>
+    <h1>Create your<br><span>account</span></h1>
+    <p>Register with your school-issued Tester.net email address.</p>
+    <div class="hint-box">
+      <p><strong>Students:</strong> Use your 6-digit ID<br>e.g. <strong>123456@Tester.net</strong></p>
+      <p style="margin-top:.5rem"><strong>Staff:</strong> Use firstname.lastname<br>e.g. <strong>jane.doe@Tester.net</strong></p>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <h2>Create account</h2>
+      <p class="sub">Only @Tester.net addresses are accepted</p>
+
+      <form method="POST" id="regForm">
+        <div class="form-group">
+          <label>School Email</label>
+          <input type="email" name="email" id="emailInput" value="{{ email }}" placeholder="123456@Tester.net or jane.doe@Tester.net" required autofocus />
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" id="pw" placeholder="Minimum 8 characters" required />
+          <div class="password-strength"><div class="password-strength-bar" id="pwBar"></div></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" name="confirm" placeholder="Re-enter password" required />
+        </div>
+
+        <div class="section-label">Personal Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" name="first_name" placeholder="Jane" required />
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" name="last_name" placeholder="Doe" required />
+          </div>
+        </div>
+
+        <div id="student-fields">
+          <div class="section-label">Student Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Grade</label>
+              <select name="grade">
+                <option value="">Select grade…</option>
+                {% for g in grade_choices %}
+                <option value="{{ g }}">Grade {{ g }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" name="birthday" />
+            </div>
+          </div>
+        </div>
+
+        <div id="staff-fields">
+          <div class="section-label">Staff Details</div>
+          <div class="form-group">
+            <label>Department</label>
+            <input type="text" name="department" placeholder="e.g. Mathematics" />
+          </div>
+          <div class="form-group">
+            <label>Role / Title</label>
+            <select name="title">
+              <option value="">Select title…</option>
+              {% for t in staff_titles %}
+              <option value="{{ t }}">{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Create Account →</button>
+      </form>
+
+      <div class="auth-switch">
+        Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const pw = document.getElementById('pw');
+  const bar = document.getElementById('pwBar');
+  pw.addEventListener('input', () => {
+    const v = pw.value;
+    let s = 0;
+    if (v.length >= 8) s++;
+    if (v.length >= 12) s++;
+    if (/[A-Z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    bar.style.width = (s/5*100) + '%';
+    bar.style.background = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#27ae60'][s-1] || 'transparent';
+  });
+
+  const emailInput = document.getElementById('emailInput');
+  function updateFields() {
+    const local = emailInput.value.trim().toLowerCase().split('@')[0];
+    document.getElementById('student-fields').style.display = /^\d{6}$/.test(local) ? 'block' : 'none';
+    document.getElementById('staff-fields').style.display   = /^[a-zA-Z]+\.[a-zA-Z]+$/.test(local) ? 'block' : 'none';
+  }
+  emailInput.addEventListener('input', updateFields);
+  updateFields();
+</script>
+{% endblock %}
