@@ -1,15 +1,4 @@
 {
-  "203822@nhps.net": {
-    "password_hash": "scrypt:32768:8:1$m88NseYrwsn8NFNq$dbecca856e29777d4603b517d4d199771c57930cbd9a5dac4595d2bcf24ab5c590745376f3dbe0d0698c2daffcdf939015e932abab2aff70a14c1734b025f642",
-    "user_type": "student",
-    "first_name": "Student",
-    "last_name": "203822",
-    "display_name": "RAYAN ASSOUARI",
-    "status": "approved",
-    "role": "developer",
-    "grade": "8",
-    "birthday": "2012-08-29"
-  },
   "dev@nhps.net": {
     "password_hash": "scrypt:32768:8:1$3TdgHjmUQIv2aZ8z$30e33a1e43ddebb8d5b95ccdaaa3f1be9f01d42a2539959eabda7fdd18f27b852bbd8c2eb6e44a0d209d7cb01528c668d26551cf23ac72289843c25233e38635",
     "user_type": "staff",
