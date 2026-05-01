@@ -121,68 +121,6 @@
 .info-row:last-child { border-bottom: none; }
 .info-label { color: var(--muted); }
 .info-value { font-weight: 600; color: var(--text); }
-
-/* ── Write-ups panel ── */
-.writeup-count-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-.wc-left { display: flex; align-items: center; gap: .75rem; }
-.wc-number {
-  font-family: 'Syne', sans-serif;
-  font-size: 2.8rem;
-  font-weight: 800;
-  line-height: 1;
-}
-.wc-number.zero  { color: var(--green); }
-.wc-number.some  { color: var(--red); }
-.wc-label { font-size: .85rem; color: var(--muted); }
-.wc-label strong { display: block; font-size: 1rem; color: var(--text); }
-
-.btn-view-writeups {
-  background: var(--navy);
-  color: #fff;
-  border: none;
-  padding: .5rem 1.2rem;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: .88rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity .2s;
-  white-space: nowrap;
-}
-.btn-view-writeups:hover { opacity: .85; }
-
-/* Preview writeups inline */
-.wu-preview-list { display: flex; flex-direction: column; gap: .65rem; margin-top: .5rem; }
-.wu-preview-item {
-  padding: .75rem 1rem;
-  border-radius: 10px;
-  border-left: 3px solid var(--red);
-  background: rgba(192,57,43,.04);
-  border-top: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.wu-preview-title { font-weight: 600; font-size: .88rem; color: var(--navy); margin-bottom: .2rem; }
-.wu-preview-meta  { font-size: .77rem; color: var(--muted); }
-
-.wu-clear {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--muted);
-}
-.wu-clear .wu-clear-icon { font-size: 2rem; margin-bottom: .4rem; }
-.wu-clear p { font-size: .88rem; }
 {% endblock %}
 
 {% block content %}
@@ -225,13 +163,11 @@
             <span class="ab-arrow">›</span>
           </a>
           {% endif %}
-          {% if role_perm('can_view_all_writeups') %}
-          <a href="{{ url_for('view_writeups', student_email=email) }}" class="action-btn">
-            <span class="ab-icon">📋</span>
-            <span class="ab-label">Manage Write-Ups</span>
+          <a href="{{ url_for('hall_passes') }}" class="action-btn highlight">
+            <span class="ab-icon">🪪</span>
+            <span class="ab-label">Hall Passes</span>
             <span class="ab-arrow">›</span>
           </a>
-          {% endif %}
           {% if session.get('role') == 'developer' %}
           <a href="{{ url_for('permissions_editor') }}" class="action-btn">
             <span class="ab-icon">⚙</span>
@@ -283,49 +219,6 @@
             <span class="role-badge {{ role_badge }}" style="font-size:.75rem;">{{ role_label }}</span>
           </span>
         </div>
-      </div>
-
-      <!-- Write-Ups Panel — shown to everyone, full detail for students/staff viewing own -->
-      <div class="card" style="grid-column: 1 / -1;">
-        <div class="card-title"><span class="card-icon">📋</span> My Write-Ups</div>
-
-        <div class="writeup-count-banner">
-          <div class="wc-left">
-            <div class="wc-number {{ 'zero' if writeup_count == 0 else 'some' }}">
-              {{ writeup_count }}
-            </div>
-            <div class="wc-label">
-              <strong>Write-Up{{ 's' if writeup_count != 1 else '' }}</strong>
-              on your record
-            </div>
-          </div>
-          <a href="{{ url_for('view_writeups', student_email=email) }}" class="btn-view-writeups">
-            View Full History →
-          </a>
-        </div>
-
-        {% if writeup_count == 0 %}
-        <div class="wu-clear">
-          <div class="wu-clear-icon">✅</div>
-          <p>You have no write-ups on record. Keep it up!</p>
-        </div>
-        {% else %}
-        <!-- Show up to 3 most recent as preview -->
-        <div class="wu-preview-list">
-          {% for w in recent_writeups %}
-          <div class="wu-preview-item">
-            <div class="wu-preview-title">{{ w.title }}</div>
-            <div class="wu-preview-meta">{{ fmt_date(w.date) }} · Issued by {{ w.issuer_name }}</div>
-          </div>
-          {% endfor %}
-          {% if writeup_count > 3 %}
-          <div style="text-align:center; font-size:.83rem; color:var(--muted); padding: .25rem 0;">
-            + {{ writeup_count - 3 }} more —
-            <a href="{{ url_for('view_writeups', student_email=email) }}" style="color:var(--blue);">view all</a>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
       </div>
 
     </div>
